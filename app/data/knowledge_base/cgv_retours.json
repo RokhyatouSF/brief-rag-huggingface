@@ -1,0 +1,50 @@
+[
+  {
+    "article_id": "CGV-ART-01",
+    "title": "Produit endommagé ou cassé lors de la livraison",
+    "category": "Casse / Défaut",
+    "content": "Si le produit livré présente un dommage matériel, une fissure, une casse ou un défaut physique prouvé par photo ou description, le client a droit à un remplacement immédiat sans frais ou à un remboursement complet sous 48h. La réclamation doit être signalée dans les 14 jours suivant la réception.",
+    "keywords": ["cassé", "endommagé", "fissure", "abîmé", "rayé", "détruit", "défaut", "casse", "choc", "écran brisé"],
+    "refund_eligible": true
+  },
+  {
+    "article_id": "CGV-ART-02",
+    "title": "Article non conforme ou erreur de commande",
+    "category": "Non-conformité",
+    "content": "En cas de réception d'un article différent de la commande initiale (mauvaise couleur, taille erronée ou référence incorrecte), le client bénéficie d'un retour gratuit et d'un remboursement intégral après validation par le service client.",
+    "keywords": ["erreur", "mauvais produit", "erreur couleur", "taille", "non conforme", "pas la bonne commande"],
+    "refund_eligible": true
+  },
+  {
+    "article_id": "CGV-ART-03",
+    "title": "Droit de rétractation légal (14 jours)",
+    "category": "Rétractation",
+    "content": "Le client dispose d'un délai de 14 jours francs à compter de la réception de sa commande pour exercer son droit de rétractation sans avoir à justifier de motifs. L'article doit être renvoyé dans son état d'origine et dans son emballage d'origine non détérioré.",
+    "keywords": ["rétractation", "changer d'avis", "retourner", "annuler", "délais", "14 jours", "renvoi"],
+    "refund_eligible": true
+  },
+  {
+    "article_id": "CGV-ART-04",
+    "title": "Refus de remboursement pour détérioration volontaire ou mauvaise utilisation",
+    "category": "Exclusion de Garantie",
+    "content": "Aucun remboursement ni échange ne sera accorde si l'inspection montre une détérioration causée par une mauvaise utilisation, une immersion dans l'eau non autorisée, un choc volontaire ou si le produit ne présente aucun défaut visible et est parfaitement fonctionnel.",
+    "keywords": ["usure", "mauvaise utilisation", "eau", "imitation", "intact", "pas de défaut", "fonctionne", "volontaire"],
+    "refund_eligible": false
+  },
+  {
+    "article_id": "CGV-ART-05",
+    "title": "Dépassement du délai de réclamation de 14 jours",
+    "category": "Exclusion de Garantie",
+    "content": "Toute réclamation reçue au-delà du délai légal de 14 jours après la livraison sans justificatif majeur sera refusée. Les retours hors délai ne sont pas éligibles au remboursement automatique.",
+    "keywords": ["hors délai", "retard", "dépassé", "trop tard", "expire", "plus de 14 jours"],
+    "refund_eligible": false
+  },
+  {
+    "article_id": "CGV-ART-06",
+    "title": "Colis perdu ou non livré",
+    "category": "Livraison",
+    "content": "Si le numéro de suivi indique que le colis n'a pas été livré après un délai de 7 jours ouvrés suivant la date estimée, une enquête transporteur est ouverte et un renvoi ou remboursement intégral est effectué.",
+    "keywords": ["perdu", "pas reçu", "non livré", "suivi", "transporteur", "colis manquant"],
+    "refund_eligible": true
+  }
+]
