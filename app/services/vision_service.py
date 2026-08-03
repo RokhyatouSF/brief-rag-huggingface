@@ -39,6 +39,7 @@ class VisionService:
             self.pipeline = pipeline(
                 "image-classification",
                 model=settings.VIT_MODEL_ID,
+                revision=settings.VIT_REVISION,
                 device=device_id
             )
             self.initialized = True
