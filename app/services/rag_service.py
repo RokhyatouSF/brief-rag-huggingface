@@ -50,6 +50,7 @@ class RAGKnowledgeService:
     def _init_embedding_model(self):
         try:
             logger.info(f"Chargement du modèle d'embedding sémantique ({settings.EMBEDDING_MODEL_ID})...")
+            # pyrefly: ignore [missing-import]
             from sentence_transformers import SentenceTransformer
 
             self.embedding_model = SentenceTransformer(
