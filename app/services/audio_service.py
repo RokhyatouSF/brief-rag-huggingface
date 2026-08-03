@@ -37,6 +37,7 @@ class AudioASRService:
             self.pipeline = pipeline(
                 "automatic-speech-recognition",
                 model=settings.WHISPER_MODEL_ID,
+                revision=settings.WHISPER_REVISION,
                 device=device_id
             )
             self.initialized = True

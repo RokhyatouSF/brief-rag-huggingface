@@ -52,7 +52,11 @@ class RAGKnowledgeService:
             logger.info(f"Chargement du modèle d'embedding sémantique ({settings.EMBEDDING_MODEL_ID})...")
             from sentence_transformers import SentenceTransformer
 
-            self.embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL_ID, device=settings.DEVICE)
+            self.embedding_model = SentenceTransformer(
+                settings.EMBEDDING_MODEL_ID,
+                revision=settings.EMBEDDING_REVISION,
+                device=settings.DEVICE
+            )
             
             # Pré-calcul des embeddings des documents de la base de connaissances
             if self.documents:
