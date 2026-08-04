@@ -54,10 +54,10 @@ async def create_support_ticket(
     # Validation des extensions si fichiers fournis
     if audio and audio.filename:
         audio_ext = audio.filename.lower().rsplit(".", 1)[-1]
-        if audio_ext not in ["wav", "mp3", "ogg", "flac", "m4a"]:
+        if audio_ext not in ["wav", "mp3", "ogg", "flac", "m4a", "mpeg", "mp4", "aac", "webm"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Format audio non supporté (.{audio_ext}). Veuillez envoyer un fichier .wav ou .mp3."
+                detail=f"Format audio non supporté (.{audio_ext}). Veuillez envoyer un fichier .wav, .mp3 ou .mpeg."
             )
 
     if image and image.filename:
@@ -132,7 +132,7 @@ async def create_support_ticket(
     policy_match = rag_service.search_policy(customer_claim_text)
 
     # 5. Moteur de Décision & Recommandation
-    ticket_status, summary, recommended_actions = DecisionEngineService.evaluate_ticket(
+    ticket_status, applied_rule, summary, recommended_actions = DecisionEngineService.evaluate_ticket(
         customer_claim_text=customer_claim_text,
         audio_result=audio_analysis,
         vision_result=vision_analysis,
@@ -143,6 +143,7 @@ async def create_support_ticket(
         ticket_id=ticket_id,
         timestamp=timestamp_iso,
         status=ticket_status,
+        applied_rule=applied_rule,
         summary=summary,
         customer_claim_text=customer_claim_text,
         audio_analysis=audio_analysis,
