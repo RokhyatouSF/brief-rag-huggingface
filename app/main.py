@@ -47,9 +47,9 @@ app = FastAPI(
     ## API de Qualification & Ingestion Automatisée de Tickets Support E-Commerce
 
     Cette API résout la surcharge du service client e-commerce en analysant automatiquement:
-    - 🎤 **Notes vocales client (ASR)** via Hugging Face **Whisper**
-    - 🖼️ **Photos de preuves (Vision)** via Vision Transformer **ViT**
-    - 📚 **Règles de gestion & CGV (RAG)** via **SentenceTransformers** & recherche vectorielle
+    - **Notes vocales client (ASR)** via Hugging Face **Whisper**
+    - **Photos de preuves (Vision)** via Vision Transformer **ViT**
+    - **Règles de gestion & CGV (RAG)** via **SentenceTransformers** & recherche vectorielle
 
     ---
     ### Endpoint principal:
