@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     WHISPER_MODEL_ID: str = os.getenv("WHISPER_MODEL_ID", "openai/whisper-small")
     WHISPER_REVISION: str = os.getenv("WHISPER_REVISION", "main")
     
-    VIT_MODEL_ID: str = os.getenv("VIT_MODEL_ID", "google/vit-base-patch16-224")
+    VIT_MODEL_ID: str = os.getenv("VIT_MODEL_ID", "openai/clip-vit-base-patch32")
     VIT_REVISION: str = os.getenv("VIT_REVISION", "main")
     
     EMBEDDING_MODEL_ID: str = os.getenv("EMBEDDING_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")

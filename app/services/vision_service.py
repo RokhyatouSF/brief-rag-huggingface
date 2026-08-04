@@ -31,21 +31,23 @@ class VisionService:
 
     def _load_model(self):
         try:
-            logger.info(f"Chargement du modèle ViT Vision ({settings.VIT_MODEL_ID}) sur {settings.DEVICE}...")
+            logger.info(f"Chargement du modèle Vision ({settings.VIT_MODEL_ID}) sur {settings.DEVICE}...")
             from transformers import pipeline
             import torch
 
             device_id = 0 if settings.DEVICE == "cuda" and torch.cuda.is_available() else -1
+            task = "zero-shot-image-classification" if "clip" in settings.VIT_MODEL_ID.lower() else "image-classification"
             self.pipeline = pipeline(
-                "image-classification",
+                task,
                 model=settings.VIT_MODEL_ID,
                 revision=settings.VIT_REVISION,
                 device=device_id
             )
+            self.is_zero_shot = (task == "zero-shot-image-classification")
             self.initialized = True
-            logger.info("Modèle ViT Vision chargé en mémoire avec succès (Singleton).")
+            logger.info(f"Modèle Vision ({task}) chargé en mémoire avec succès (Singleton).")
         except Exception as e:
-            logger.warning(f"Impossible de charger le modèle ViT réel ({e}). Activation du mode secours Vision.")
+            logger.warning(f"Impossible de charger le modèle Vision réel ({e}). Activation du mode secours Vision.")
             self.pipeline = None
             self.initialized = False
 
@@ -68,17 +70,34 @@ class VisionService:
                 "error": f"Format d'image invalide: {e}"
             }
 
-        # Analyse réelle avec ViT si disponible
+        # Analyse réelle avec le modèle Vision (CLIP Zero-Shot ou ViT)
         if self.initialized and self.pipeline is not None:
             try:
-                results = self.pipeline(image)
-                top_result = results[0] if results else {"label": "unknown", "score": 0.0}
+                if getattr(self, "is_zero_shot", False):
+                    candidate_labels = [
+                        "a damaged, broken or cracked product with visible physical defects",
+                        "an intact, brand new retail product in good condition"
+                    ]
+                    results = self.pipeline(image, candidate_labels=candidate_labels)
+                    top_result = results[0] if results else {"label": "unknown", "score": 0.0}
 
-                label = top_result.get("label", "unknown")
-                confidence = float(top_result.get("score", 0.0))
+                    label = top_result.get("label", "unknown")
+                    confidence = float(top_result.get("score", 0.0))
 
-                # Analyse des labels et détection des défauts
-                condition_status, defects = self._evaluate_condition_from_label(label, confidence, filename)
+                    is_damaged_label = any(kw in label.lower() for kw in ["damaged", "broken", "cracked", "defect"])
+                    if is_damaged_label and confidence >= 0.50:
+                        condition_status = "Produit endommagé / cassé"
+                        defects = ["Fissure matérielle visible", "Dégâts physiques apparents", "Détérioration du produit"]
+                    else:
+                        condition_status = "Produit conforme / intact"
+                        defects = []
+                else:
+                    results = self.pipeline(image)
+                    top_result = results[0] if results else {"label": "unknown", "score": 0.0}
+
+                    label = top_result.get("label", "unknown")
+                    confidence = float(top_result.get("score", 0.0))
+                    condition_status, defects = self._evaluate_condition_from_label(label, confidence, filename)
 
                 return {
                     "processed": True,
@@ -90,7 +109,7 @@ class VisionService:
                     "error": None
                 }
             except Exception as e:
-                logger.error(f"Erreur lors de l'inférence ViT: {e}")
+                logger.error(f"Erreur lors de l'inférence Vision: {e}")
                 return self._heuristic_vision_analysis(image, filename)
         else:
             return self._heuristic_vision_analysis(image, filename)
