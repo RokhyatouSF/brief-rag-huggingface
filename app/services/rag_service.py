@@ -94,11 +94,14 @@ class RAGKnowledgeService:
 
                 return PolicyMatch(
                     article_id=best_doc["article_id"],
+                    rule_code=best_doc.get("rule_code"),
                     title=best_doc["title"],
                     category=best_doc["category"],
+                    explicit_rule=best_doc.get("explicit_rule"),
                     excerpt=best_doc["content"],
                     similarity_score=round(max(0.0, min(1.0, best_score)), 4),
-                    refund_eligible=best_doc.get("refund_eligible", True)
+                    refund_eligible=best_doc.get("refund_eligible", True),
+                    status_associated=best_doc.get("status_associated")
                 )
             except Exception as e:
                 logger.error(f"Erreur de recherche vectorielle RAG: {e}")
@@ -133,11 +136,14 @@ class RAGKnowledgeService:
 
         return PolicyMatch(
             article_id=best_doc["article_id"],
+            rule_code=best_doc.get("rule_code"),
             title=best_doc["title"],
             category=best_doc["category"],
+            explicit_rule=best_doc.get("explicit_rule"),
             excerpt=best_doc["content"],
             similarity_score=calc_score,
-            refund_eligible=best_doc.get("refund_eligible", True)
+            refund_eligible=best_doc.get("refund_eligible", True),
+            status_associated=best_doc.get("status_associated")
         )
 
 

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class DecisionEngineService:
     """
     Moteur de décision central combinant l'analyse vocale ASR, la classification vision ViT
-    et les règles sémantiques RAG pour recommander le statut du ticket et les actions associées.
+    et les règles sémantiques RAG (SmartHelp) pour recommander le statut du ticket et les actions associées.
     """
 
     @staticmethod
@@ -22,10 +22,10 @@ class DecisionEngineService:
         audio_result: AudioAnalysisResult,
         vision_result: VisionAnalysisResult,
         policy_match: Optional[PolicyMatch]
-    ) -> Tuple[TicketStatus, str, List[str]]:
+    ) -> Tuple[TicketStatus, Optional[str], str, List[str]]:
         """
         Synthétise les analyses multimodales pour déterminer le statut préconisé.
-        Retourne (status, summary_explanation, recommended_actions).
+        Retourne (status, applied_rule, summary_explanation, recommended_actions).
         """
         claim_lower = customer_claim_text.lower()
         has_audio = audio_result.processed and bool(audio_result.transcription)
@@ -35,63 +35,99 @@ class DecisionEngineService:
 
         actions = []
 
-        # 1. Cas d'exclusion explicite ou produit intact confirmé
-        if is_intact_image and ("cassé" in claim_lower or "endommagé" in claim_lower or "fissure" in claim_lower):
+        # 1. Contradiction majeure ou mauvaise utilisation (Règle 4.1)
+        if is_intact_image and any(kw in claim_lower for kw in ["cassé", "endommagé", "fissure", "abîmé"]):
             status = TicketStatus.REFUSE
+            applied_rule = "Règle 4.1 (Usure normale / Mauvaise utilisation)"
             summary = (
                 "Contradiction majeure détectée: la note vocale ou le texte signale un produit cassé, "
-                "mais l'analyse visuelle par ViT confirme que l'article sur la photo est intact et conforme."
+                "mais l'analyse visuelle par ViT confirme que l'article sur la photo est intact et conforme (Règle 4.1)."
             )
             actions = [
                 "Demander au client une nouvelle photo nette sous un autre angle",
                 "Refuser le remboursement automatique immédiat",
                 "Transmettre au niveau 2 si le client conteste l'analyse"
             ]
+            return status, applied_rule, summary, actions
 
-        # 2. Cas de produit endommagé confirmé avec politique éligible
-        elif is_damaged_image and (policy_match is None or policy_match.refund_eligible):
-            status = TicketStatus.REMBOURSABLE
+        # 2. Absence de preuve ou justificatifs (Règle 4.2)
+        if not has_vision and not has_audio and (not customer_claim_text or len(customer_claim_text.strip()) < 10 or customer_claim_text == "Aucun texte rédigé."):
+            status = TicketStatus.EN_ATTENTE_JUSTIFICATIFS
+            applied_rule = "Règle 4.2 (Absence de preuve)"
+            summary = "Absence de justificatifs probants: ni photo ni note vocale/description explicite fournie (Règle 4.2)."
+            actions = [
+                "Relancer le client pour obtenir une note vocale ou une photo claire du produit",
+                "Mettre le ticket en attente de pièces complémentaires"
+            ]
+            return status, applied_rule, summary, actions
+
+        # 3. Application directe du statut recommandé par la règle SmartHelp sélectionnée par le RAG
+        if policy_match and policy_match.status_associated:
+            try:
+                status = TicketStatus(policy_match.status_associated)
+            except ValueError:
+                status = TicketStatus.REMBOURSABLE if policy_match.refund_eligible else TicketStatus.REFUSE
+
+            applied_rule = f"{policy_match.title}" if policy_match.title else "Règle SmartHelp non identifiée"
+            rule_prefix = f"[{policy_match.rule_code}] " if policy_match.rule_code else ""
             summary = (
-                "Réclamation valide et prouvée: l'analyse visuelle ViT confirme des dommages matériels visibles "
-                f"({', '.join(vision_result.detected_defects) or 'Défaut physique'}), ce qui est conforme à la clause "
-                f"'{policy_match.title if policy_match else 'Produit endommagé'}' de la politique de retour."
+                f"Application explicite de la règle SmartHelp {rule_prefix}'{policy_match.title}' "
+                f"(Catégorie: {policy_match.category}). Règle officielle: {policy_match.explicit_rule or policy_match.excerpt}"
             )
-            actions = [
-                "Valider le remboursement ou l'expédition d'un produit de remplacement sans frais",
-                "Envoyer au client une étiquette de retour prépayée si retour requis",
-                "Clôturer le ticket avec le statut Remboursable"
-            ]
 
-        # 3. Cas de mauvaise réclamation sans preuves suffisantes
-        elif policy_match and not policy_match.refund_eligible:
-            status = TicketStatus.REFUSE
-            summary = (
-                f"Réclamation non éligible d'après la règle interne '{policy_match.title}'. "
-                f"Motif: {policy_match.excerpt[:150]}..."
-            )
-            actions = [
-                "Notifier le client du refus selon les CGV applicables",
-                "Fournir un lien vers les CGV de l'entreprise"
-            ]
+            # Actions personnalisées selon le statut SmartHelp
+            if status == TicketStatus.REMBOURSABLE or status == TicketStatus.REMBOURSABLE_COLIS_PERDU:
+                actions = [
+                    "Valider le remboursement intégral ou l'expédition d'un produit de remplacement sans frais",
+                    "Émettre l'étiquette de retour prépayée si nécessaire",
+                    "Clôturer le ticket avec le statut Remboursable"
+                ]
+            elif status == TicketStatus.ECHANGE_GRATUIT:
+                actions = [
+                    "Générer une étiquette de retour prépayée pour le mauvais article reçu",
+                    "Déclencher l'expédition du bon modèle/couleur/taille sous 24h",
+                    "Informer le client de la prise en charge gratuite de l'échange"
+                ]
+            elif status == TicketStatus.EXPEDITION_PIECE:
+                actions = [
+                    "Identifier la référence exacte de la pièce ou de l'accessoire manquant",
+                    "Programmer l'expédition de la pièce manquante sous 3 jours ouvrés",
+                    "Notifier le client du numéro de suivi du colis complémentaire"
+                ]
+            elif status == TicketStatus.DEDOMMAGEMENT_10:
+                actions = [
+                    "Générer un code promo / bon d'achat de 10% valable sur la prochaine commande",
+                    "Envoyer le bon d'achat par email au client pour compenser le retard majeur de livraison",
+                    "Clôturer le ticket avec dédommagement"
+                ]
+            elif status == TicketStatus.NON_REMBOURSABLE_RETARD_MINEUR:
+                actions = [
+                    "Notifier le client de la livraison imminente selon les informations du transporteur",
+                    "Expliquer poliment qu'un retard <= 3 jours ouvrés ne donne pas lieu à compensation financière (Règle 3.1)"
+                ]
+            elif status == TicketStatus.REFUSE:
+                actions = [
+                    "Notifier le client du refus selon les termes de la politique SmartHelp",
+                    "Fournir un lien vers la documentation interne/CGV"
+                ]
+            elif status == TicketStatus.A_VERIFIER:
+                actions = [
+                    "Transmettre le dossier au manager pour validation manuelle",
+                    "Vérifier la date exacte d'achat et de réclamation (contrôle du délai de 48h)"
+                ]
+            else:
+                actions = [
+                    "Vérifier les pièces du dossier et traiter selon les préconisations SmartHelp"
+                ]
 
-        # 4. Cas incertains ou informations partielles
-        elif not has_vision and not has_audio and len(customer_claim_text.strip()) < 10:
-            status = TicketStatus.A_VERIFIER
-            summary = "Éléments insuffisants fournis par le client (absence de fichier audio et photo claire)."
-            actions = [
-                "Relancer le client pour obtenir une note vocale ou une photo du produit endommagé"
-            ]
+            return status, applied_rule, summary, actions
 
-        else:
-            status = TicketStatus.A_VERIFIER
-            summary = (
-                "Diagnostic mixte nécessitant une validation manuelle par un conseiller support. "
-                f"La règle CGV la plus proche est '{policy_match.title if policy_match else 'FAQ Générale'}'."
-            )
-            actions = [
-                "Vérifier manuellement les pièces jointes",
-                "Consulter l'historique d'achats du client",
-                "Valider ou ajuster le statut avant remboursement"
-            ]
-
-        return status, summary, actions
+        # 4. Fallback général si aucune règle n'est sélectionnée
+        status = TicketStatus.A_VERIFIER
+        applied_rule = "Règle indéterminée / Diagnostic mixte"
+        summary = "Diagnostic mixte nécessitant une validation manuelle par un conseiller support."
+        actions = [
+            "Vérifier manuellement les pièces jointes et réclamation du client",
+            "Consulter la politique SmartHelp et ajuster le statut"
+        ]
+        return status, applied_rule, summary, actions

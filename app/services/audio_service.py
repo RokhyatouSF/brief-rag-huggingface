@@ -60,7 +60,7 @@ class AudioASRService:
             temp_path = None
             try:
                 suffix = os.path.splitext(filename)[1].lower()
-                if suffix not in [".wav", ".mp3", ".ogg", ".flac", ".m4a"]:
+                if suffix not in [".wav", ".mp3", ".ogg", ".flac", ".m4a", ".mpeg", ".mp4", ".aac", ".webm"]:
                     suffix = ".wav"
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_audio:
