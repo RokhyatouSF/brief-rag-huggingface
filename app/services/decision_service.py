@@ -74,10 +74,14 @@ class DecisionEngineService:
             return status, applied_rule, summary, actions
 
         # 4. Arbitrage dynamique : Casse réclamée après le délai de 48 heures (Règle 1.2)
-        if predicted_intent == "1.2":
+        is_delay_exceeded_text = any(kw in claim_lower for kw in ["2 jours", "48h", "48 heures", "plusieurs jours", "délai dépassé", "apres 2", "après 2"])
+        if predicted_intent == "1.2" or (is_delay_exceeded_text and not is_intact_image):
             status = TicketStatus.A_VERIFIER
             applied_rule = "Règle 1.2 (Délai dépassé)"
-            summary = f"Raisonnement sémantique IA (Règle 1.2) : {llm_reasoning}"
+            summary = (
+                f"Raisonnement sémantique IA (Règle 1.2) : La réclamation mentionne un délai supérieur à 48 heures "
+                f"suivant la livraison (ex: 'après 2 jours'). Le dossier nécessite une validation manuelle du manager."
+            )
             actions = [
                 "Transmettre le dossier au manager pour validation manuelle de dérogation",
                 "Vérifier la date exacte d'achat et la date de livraison effective auprès du transporteur"
