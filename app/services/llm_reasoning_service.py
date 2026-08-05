@@ -43,11 +43,12 @@ class LLMReasoningService:
             self.classifier = None
             self.initialized = False
 
-    def analyze_claim_intent(self, claim_text: str, vision_status: Optional[str] = None) -> Dict[str, Any]:
+    def analyze_claim_intent(self, customer_claim_text: str, vision_status: Optional[str] = None) -> Dict[str, Any]:
         """
         Analyse sémantiquement l'intention du client, la responsabilité et les contraintes temporelles
         par inférence NLI dynamique.
         """
+        claim_text = customer_claim_text
         if not claim_text or claim_text.strip() == "Aucun texte rédigé.":
             return {
                 "top_intent": "REGLE-4.2",
