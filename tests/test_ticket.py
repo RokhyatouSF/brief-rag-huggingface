@@ -87,3 +87,72 @@ def test_support_ticket_mpeg_audio_supported():
     res_data = response.json()
     assert res_data["audio_analysis"]["processed"] is True
 
+
+def test_support_ticket_damaged_image_with_vague_delivery_text(monkeypatch):
+    from PIL import Image
+    from app.services.vision_service import VisionService
+    
+    # Mocking Vision Service to return a damaged product result
+    monkeypatch.setattr(
+        VisionService,
+        "analyze_image_bytes",
+        lambda self, bytes_data, fname: {
+            "processed": True,
+            "label": "a damaged, broken or cracked product with visible physical defects",
+            "condition_status": "Produit endommagé / cassé",
+            "confidence": 0.9526,
+            "detected_defects": ["Fissure matérielle visible"],
+            "file_name": fname,
+            "error": None
+        }
+    )
+
+    img_bytes = io.BytesIO()
+    img = Image.new('RGB', (10, 10), color='red')
+    img.save(img_bytes, format='JPEG')
+    img_bytes.seek(0)
+
+    files = {'image': ('images.jpg', img_bytes, 'image/jpeg')}
+    data = {'description': "je l'ai recu comme ca , a la livraison"}
+
+    response = client.post("/support-ticket", files=files, data=data)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "Remboursable"
+    assert "Règle 1.1" in res_data["applied_rule"]
+
+
+def test_support_ticket_client_fault_refused(monkeypatch):
+    from PIL import Image
+    from app.services.vision_service import VisionService
+    
+    monkeypatch.setattr(
+        VisionService,
+        "analyze_image_bytes",
+        lambda self, bytes_data, fname: {
+            "processed": True,
+            "label": "a damaged, broken or cracked product with visible physical defects",
+            "condition_status": "Produit endommagé / cassé",
+            "confidence": 0.9526,
+            "detected_defects": ["Fissure matérielle visible"],
+            "file_name": fname,
+            "error": None
+        }
+    )
+
+    img_bytes = io.BytesIO()
+    img = Image.new('RGB', (10, 10), color='red')
+    img.save(img_bytes, format='JPEG')
+    img_bytes.seek(0)
+
+    files = {'image': ('images.jpg', img_bytes, 'image/jpeg')}
+    data = {'description': "C'est avec moi qu'il s'est cassee"}
+
+    response = client.post("/support-ticket", files=files, data=data)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "Refusé"
+    assert "Règle 4.1" in res_data["applied_rule"]
+
+
+

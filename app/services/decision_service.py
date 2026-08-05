@@ -35,17 +35,27 @@ class DecisionEngineService:
 
         actions = []
 
-        # 1. Contradiction majeure ou mauvaise utilisation (Règle 4.1)
-        if is_intact_image and any(kw in claim_lower for kw in ["cassé", "endommagé", "fissure", "abîmé"]):
+        client_fault_keywords = [
+            "avec moi", "de ma faute", "ma faute", "fait tomber", "chute", 
+            "usure", "mauvaise manipulation", "j'ai cassé", "je l'ai cassé", 
+            "cassé par moi", "mal manipulé", "tombé par terre"
+        ]
+        is_client_fault = any(kw in claim_lower for kw in client_fault_keywords)
+
+        # 1. Contradiction majeure ou mauvaise utilisation / faute du client (Règle 4.1)
+        if is_client_fault or (is_intact_image and any(kw in claim_lower for kw in ["cassé", "endommagé", "fissure", "abîmé"])) or (policy_match and policy_match.rule_code == "4.1"):
             status = TicketStatus.REFUSE
             applied_rule = "Règle 4.1 (Usure normale / Mauvaise utilisation)"
             summary = (
+                "Refus au titre de la Règle 4.1 : La réclamation indique que le dommage résulte d'un évènement survenu après réception "
+                "ou d'une manipulation/responsabilité du client."
+                if is_client_fault else
                 "Contradiction majeure détectée: la note vocale ou le texte signale un produit cassé, "
                 "mais l'analyse visuelle par ViT confirme que l'article sur la photo est intact et conforme (Règle 4.1)."
             )
             actions = [
-                "Demander au client une nouvelle photo nette sous un autre angle",
-                "Refuser le remboursement automatique immédiat",
+                "Notifier le client du refus selon la Règle 4.1 (responsabilité client / usure)",
+                "Fournir un lien vers la documentation CGV / politique de retour",
                 "Transmettre au niveau 2 si le client conteste l'analyse"
             ]
             return status, applied_rule, summary, actions
@@ -60,6 +70,23 @@ class DecisionEngineService:
                 "Mettre le ticket en attente de pièces complémentaires"
             ]
             return status, applied_rule, summary, actions
+
+        # 3. Preuve visuelle directe de dommage / casse à la livraison (Règle 1.1)
+        if is_damaged_image:
+            # Si le RAG n'a pas sélectionné une règle d'exception spécifique (ex: Règle 1.2 Délai dépassé ou Règle 4.1 Usure)
+            if not policy_match or policy_match.rule_code not in ["1.2", "4.1"]:
+                status = TicketStatus.REMBOURSABLE
+                applied_rule = "Règle 1.1 (Casse / Dommage visible)"
+                summary = (
+                    "Preuve visuelle de dommage ou fissure confirmée par l'analyse d'image (ViT). "
+                    "Application de la Règle 1.1 (Casse / Dommage visible) : le dossier est éligible au remboursement ou remplacement."
+                )
+                actions = [
+                    "Valider le remboursement intégral ou l'expédition d'un produit de remplacement sans frais",
+                    "Émettre l'étiquette de retour prépayée si nécessaire",
+                    "Clôturer le ticket avec le statut Remboursable"
+                ]
+                return status, applied_rule, summary, actions
 
         # 3. Application directe du statut recommandé par la règle SmartHelp sélectionnée par le RAG
         if policy_match and policy_match.status_associated:

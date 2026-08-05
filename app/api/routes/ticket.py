@@ -124,6 +124,8 @@ async def create_support_ticket(
         combined_texts.append(f"Transcription vocale: {transcription_text}")
     if description and description.strip():
         combined_texts.append(f"Description client: {description.strip()}")
+    if vision_analysis.processed and vision_analysis.condition_status:
+        combined_texts.append(f"Constat visuel image: {vision_analysis.condition_status}")
 
     customer_claim_text = " | ".join(combined_texts) if combined_texts else "Aucun texte rédigé."
 
