@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_ID: str = os.getenv("EMBEDDING_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")
     EMBEDDING_REVISION: str = os.getenv("EMBEDDING_REVISION", "1110a243fdf4706b3f48f1d95db1a4f5529b4d41")
     
+    LLM_REASONING_MODEL_ID: str = os.getenv("LLM_REASONING_MODEL_ID", "typeform/distilbert-base-uncased-mnli")
+    
     # Dispositif matériel (cpu ou cuda)
     DEVICE: str = os.getenv("DEVICE", "cpu")
     
