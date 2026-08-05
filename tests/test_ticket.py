@@ -155,4 +155,38 @@ def test_support_ticket_client_fault_refused(monkeypatch):
     assert "Règle 4.1" in res_data["applied_rule"]
 
 
+def test_support_ticket_delay_exceeded_rule_1_2(monkeypatch):
+    from PIL import Image
+    from app.services.vision_service import VisionService
+    
+    monkeypatch.setattr(
+        VisionService,
+        "analyze_image_bytes",
+        lambda self, bytes_data, fname: {
+            "processed": True,
+            "label": "a damaged, broken or cracked product with visible physical defects",
+            "condition_status": "Produit endommagé / cassé",
+            "confidence": 0.9526,
+            "detected_defects": ["Fissure matérielle visible"],
+            "file_name": fname,
+            "error": None
+        }
+    )
+
+    img_bytes = io.BytesIO()
+    img = Image.new('RGB', (10, 10), color='red')
+    img.save(img_bytes, format='JPEG')
+    img_bytes.seek(0)
+
+    files = {'image': ('images.jpg', img_bytes, 'image/jpeg')}
+    data = {'description': "elle s'est cassee apres 2 jours de la livraison"}
+
+    response = client.post("/support-ticket", files=files, data=data)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "À vérifier"
+    assert "Règle 1.2" in res_data["applied_rule"]
+
+
+
 

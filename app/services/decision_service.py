@@ -42,6 +42,14 @@ class DecisionEngineService:
         ]
         is_client_fault = any(kw in claim_lower for kw in client_fault_keywords)
 
+        time_delay_exceeded_keywords = [
+            "apres 2 jours", "après 2 jours", "apres 48h", "après 48h", 
+            "plus de 48h", "plus de 48 heures", "3 jours après", "3 jours apres", 
+            "délai dépassé", "apres 48 heures", "après 48 heures", "quelques jours après",
+            "2 jours après", "2 jours apres"
+        ]
+        is_delay_exceeded = any(kw in claim_lower for kw in time_delay_exceeded_keywords)
+
         # 1. Contradiction majeure ou mauvaise utilisation / faute du client (Règle 4.1)
         if is_client_fault or (is_intact_image and any(kw in claim_lower for kw in ["cassé", "endommagé", "fissure", "abîmé"])) or (policy_match and policy_match.rule_code == "4.1"):
             status = TicketStatus.REFUSE
@@ -60,7 +68,21 @@ class DecisionEngineService:
             ]
             return status, applied_rule, summary, actions
 
-        # 2. Absence de preuve ou justificatifs (Règle 4.2)
+        # 2. Casse / Dommage signalé après le délai réglementaire de 48h (Règle 1.2)
+        if is_delay_exceeded or (policy_match and policy_match.rule_code == "1.2"):
+            status = TicketStatus.A_VERIFIER
+            applied_rule = "Règle 1.2 (Délai dépassé)"
+            summary = (
+                "Règle 1.2 (Délai dépassé) : La réclamation pour produit cassé/endommagé mentionne un délai supérieur à 48 heures "
+                "suivant la livraison (ex: 'après 2 jours'). Le dossier nécessite une validation manuelle du manager."
+            )
+            actions = [
+                "Transmettre le dossier au manager pour validation manuelle de dérogation",
+                "Vérifier la date exacte d'achat et la date de livraison effective auprès du transporteur"
+            ]
+            return status, applied_rule, summary, actions
+
+        # 3. Absence de preuve ou justificatifs (Règle 4.2)
         if not has_vision and not has_audio and (not customer_claim_text or len(customer_claim_text.strip()) < 10 or customer_claim_text == "Aucun texte rédigé."):
             status = TicketStatus.EN_ATTENTE_JUSTIFICATIFS
             applied_rule = "Règle 4.2 (Absence de preuve)"
@@ -71,14 +93,14 @@ class DecisionEngineService:
             ]
             return status, applied_rule, summary, actions
 
-        # 3. Preuve visuelle directe de dommage / casse à la livraison (Règle 1.1)
+        # 4. Preuve visuelle directe de dommage / casse à la livraison dans les délais (Règle 1.1)
         if is_damaged_image:
             # Si le RAG n'a pas sélectionné une règle d'exception spécifique (ex: Règle 1.2 Délai dépassé ou Règle 4.1 Usure)
             if not policy_match or policy_match.rule_code not in ["1.2", "4.1"]:
                 status = TicketStatus.REMBOURSABLE
                 applied_rule = "Règle 1.1 (Casse / Dommage visible)"
                 summary = (
-                    "Preuve visuelle de dommage ou fissure confirmée par l'analyse d'image (ViT). "
+                    "Preuve visuelle de dommage ou fissure confirmée par l'analyse d'image (ViT) dans le délai de 48h. "
                     "Application de la Règle 1.1 (Casse / Dommage visible) : le dossier est éligible au remboursement ou remplacement."
                 )
                 actions = [
