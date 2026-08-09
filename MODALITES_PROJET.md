@@ -7,7 +7,7 @@
 - **Format d'exécution** : **Individuel**
 - **Développeur Lead / Backend & IA** : Étudiant / Développeur unique
 - **Lien du Tableau de Bord Kanban (Trello / GitHub Projects)** :
-  - **Tableau de Bord** : [Tableau Kanban E-Commerce Support Ticket AI](https://trello.com/invite/b/6a78b24f33d255043a3fb983/ATTIeeaba0f076ca95d80364630a757f565a076AFB49/modele-kanban) *(Invité requis : `cheikhserignesalioutalla@gmail.com`)*
+  - **Tableau de Bord** : Tableau Kanban E-Commerce Support Ticket AI *(Invité requis : `cheikhserignesalioutalla@gmail.com`)*
   - **Suivi des Tâches** : Backlog, In Progress, Code Review, Done.
 
 ---

@@ -216,7 +216,7 @@ Ouvrez votre navigateur web à l'adresse suivante :
 
 ## 8. Tableau Kanban & Stratégie Git Flow
 
-- **Lien du Tableau Kanban** : [Trello / GitHub Projects Board](https://trello.com/invite/b/6a78b24f33d255043a3fb983/ATTIeeaba0f076ca95d80364630a757f565a076AFB49/modele-kanban) *(Invité : `cheikhserignesalioutalla@gmail.com`)*
+- **Lien du Tableau Kanban** : Trello / GitHub Projects Board *(Invité : `cheikhserignesalioutalla@gmail.com`)*
 - **Document de Gestion de Projet** : Voir [MODALITES_PROJET.md](file:///c:/Users/dell/Documents/briefRagHF/MODALITES_PROJET.md) pour la répartition des tâches et la convention de nommage des commits Git.
 
 ---
