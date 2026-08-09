@@ -6,8 +6,6 @@
 
 - **Format d'exécution** : **Individuel**
 - **Développeur Lead / Backend & IA** : Étudiant / Développeur unique
-- **Lien du Tableau de Bord Kanban (Trello / GitHub Projects)** :
-  
   - **Suivi des Tâches** : Backlog, In Progress, Code Review, Done.
 
 ---
